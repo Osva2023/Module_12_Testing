@@ -10,19 +10,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil {
 
-    @Value("${app.jwt.secret}")
-    private String secret;
+    @Value("${jwt.secret-key}")
+    private String secretKey;
 
     public String generateAccessToken(UserEntity user) {
         return Jwts.builder()
                 .setSubject(String.format("%s,%s", user.getId(), user.getEmail()))
-                .signWith(SignatureAlgorithm.HS512, secret)
+                .signWith(SignatureAlgorithm.HS512, secretKey)
                 .compact();
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtUtil.class);
     public boolean validateAccessToken(String token) {
         try {
-            Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
+            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return true;
         } catch (ExpiredJwtException ex) {
             LOGGER.error("JWT expired", ex.getMessage());
@@ -44,7 +44,7 @@ public class JwtUtil {
 
     private Claims parseClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(secret)
+                .setSigningKey(secretKey)
                 .parseClaimsJws(token)
                 .getBody();
     }
