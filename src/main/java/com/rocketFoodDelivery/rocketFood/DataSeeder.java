@@ -6,6 +6,7 @@ import com.rocketFoodDelivery.rocketFood.repository.*;
 import com.rocketFoodDelivery.rocketFood.service.UserService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
+@Profile("manual-seeding")
 public class DataSeeder {
 
    private final UserRepository userRepository;

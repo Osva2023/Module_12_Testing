@@ -7,12 +7,14 @@ import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.exception.*;
 
 import jakarta.validation.Valid;
-
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
@@ -32,11 +34,19 @@ public class RestaurantApiController {
      * @param restaurant The data for the new restaurant.
      * @return ResponseEntity with the created restaurant's data, or a BadRequestException if creation fails.
      */
-    @PostMapping("/api/restaurants")
-    public ResponseEntity<Object> createRestaurant(@RequestBody ApiCreateRestaurantDto restaurant) {
-        return null; // TODO return proper object
+   @PostMapping("/api/restaurants")
+public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCreateRestaurantDto restaurantDto) {
+    Optional<ApiCreateRestaurantDto> createdRestaurantDto = restaurantService.createRestaurant(restaurantDto);
+    Map<String, Object> response = new HashMap<>();
+    if (createdRestaurantDto.isPresent()) {
+        response.put("message", "Success");
+        response.put("data", createdRestaurantDto.get());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    } else {
+        response.put("message", "Invalid or missing parameters");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
-    
+}
     // TODO
 
     /**

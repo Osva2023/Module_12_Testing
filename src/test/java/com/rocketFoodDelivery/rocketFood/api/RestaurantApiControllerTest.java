@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,9 +44,10 @@ public class RestaurantApiControllerTest {
     public void testCreateRestaurant_Success() throws Exception {
         ApiAddressDto inputAddress = new ApiAddressDto(1, "123 Wellington St.", "Montreal", "H1H2H2");
         ApiCreateRestaurantDto inputRestaurant = new ApiCreateRestaurantDto(1, 4, "Villa wellington", 2, "5144154415", "reservations@villawellington.com", inputAddress);
-
+        
+        ArgumentCaptor<ApiCreateRestaurantDto> captor = ArgumentCaptor.forClass(ApiCreateRestaurantDto.class);
         // Mock service behavior
-        when(restaurantService.createRestaurant(any())).thenReturn(Optional.of(inputRestaurant));
+        when(restaurantService.createRestaurant(captor.capture())).thenReturn(Optional.of(inputRestaurant));
 
         // Validate response code and content
         mockMvc.perform(MockMvcRequestBuilders.post("/api/restaurants")
