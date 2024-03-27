@@ -5,9 +5,12 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.exception.*;
+import com.rocketFoodDelivery.rocketFood.models.Restaurant;
 
 import jakarta.validation.Valid;
 import java.util.Map;
+import java.util.NoSuchElementException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,10 +51,28 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
      * @param id The ID of the restaurant to delete.
      * @return ResponseEntity with a success message, or a ResourceNotFoundException if the restaurant is not found.
      */
-    @DeleteMapping("/api/restaurants/{id}")
-    public ResponseEntity<Object> deleteRestaurant(@PathVariable int id){
-        return null; // TODO return proper object
+   @DeleteMapping("/api/restaurants/{id}")
+public ResponseEntity<Map<String, Object>> deleteRestaurant(@PathVariable int id) {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        // Get the restaurant before deleting it
+        Restaurant restaurant = restaurantService.getRestaurant(id);
+        // Delete the restaurant
+        restaurantService.deleteRestaurant(id);
+        // Prepare the success response
+        response.put("message", "Success");
+        response.put("data", restaurant);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    } catch (NoSuchElementException e) {
+        // Prepare the error response
+        response.put("error", "Resource Not found");
+        response.put("details", "Restaurant with id " + id + " not found");
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    } catch (Exception e) {
+        response.put("message", "Error deleting restaurant");
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+}
 
     // TODO
 

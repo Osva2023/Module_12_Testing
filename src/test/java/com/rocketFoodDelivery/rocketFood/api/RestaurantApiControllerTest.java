@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import static org.mockito.Mockito.doNothing;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -122,5 +123,18 @@ public void testGetAllRestaurantsWithInvalidParameters() throws Exception {
             .andExpect(MockMvcResultMatchers.status().isBadRequest());
 }
 
+@Test
+public void testDeleteRestaurant_Success() throws Exception {
+    // Mock data
+    int restaurantId = 30;
+
+    // Mock service behavior
+    doNothing().when(restaurantService).deleteRestaurant(restaurantId);
+
+    // Validate response code and content
+    mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/{id}", restaurantId))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"));
+}
 
 }

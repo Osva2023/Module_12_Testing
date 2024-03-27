@@ -9,17 +9,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rocketFoodDelivery.rocketFood.models.Address;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -181,22 +186,26 @@ public class RestaurantService {
      * @return An Optional containing the restaurant with the specified ID,
      *         or Optional.empty() if no restaurant is found.
      */
-    public Optional<Restaurant> findById(int id) {
-        return null; // TODO return proper object
+    public Restaurant getRestaurant(int id) {
+        String sql = "SELECT * FROM restaurants WHERE id = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql, new RestaurantRowMapper(), id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoSuchElementException("Restaurant with id " + id + " not found");
+        }
     }
-
-    // TODO
-
-    /**
-     * Updates an existing restaurant by ID with the provided data.
-     *
-     * @param id                   The ID of the restaurant to update.
-     * @param updatedRestaurantDto The updated data for the restaurant.
-     * @return An Optional containing the updated restaurant's information as an
-     *         ApiCreateRestaurantDto,
-     *         or Optional.empty() if the restaurant with the specified ID is not
-     *         found or if an error occurs during the update.
-     */
+private static class RestaurantRowMapper implements RowMapper<Restaurant> {
+        @Override
+        public Restaurant mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Restaurant restaurant = new Restaurant();
+            restaurant.setId(rs.getInt("id"));
+            restaurant.setName(rs.getString("name"));
+            restaurant.setPriceRange(rs.getInt("price_range"));
+            
+            return restaurant;
+        }
+    }
+    
 
      @Transactional
      public Optional<ApiCreateRestaurantDto> updateRestaurant(int id, ApiCreateRestaurantDto updatedRestaurantDto) {
@@ -224,14 +233,37 @@ public class RestaurantService {
 
     // TODO
 
-    /**
-     * Deletes a restaurant along with its associated data, including its product
-     * orders, orders and products.
-     *
-     * @param restaurantId The ID of the restaurant to delete.
-     */
     @Transactional
     public void deleteRestaurant(int restaurantId) {
-        return;
+        logger.log(Level.INFO, "Deleting restaurant with id {0}", restaurantId);
+
+        String deleteOrdersSql = "DELETE FROM orders WHERE restaurant_id = ?";
+        jdbcTemplate.update(deleteOrdersSql, restaurantId);
+        logger.log(Level.INFO, "Deleted orders for restaurant with id {0}", restaurantId);
+
+        String deleteProductsSQL = "DELETE FROM products WHERE restaurant_id = ?";
+        jdbcTemplate.update(deleteProductsSQL, restaurantId);
+        logger.log(Level.INFO, "Deleted products for restaurant with id {0}", restaurantId);
+
+        String getRestaurantAddressIdSql = "SELECT address_id FROM restaurants WHERE id = ?";
+        Integer addressId = jdbcTemplate.queryForObject(getRestaurantAddressIdSql, Integer.class, restaurantId);
+        logger.log(Level.INFO, "Got address id {0} for restaurant with id {1}", new Object[]{addressId, restaurantId});
+
+        String deleteRestaurantSql = "DELETE FROM restaurants WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(deleteRestaurantSql, restaurantId);
+        if (rowsAffected == 0) {
+            throw new NoSuchElementException("Restaurant with id " + restaurantId + " not found");
+        }
+        logger.log(Level.INFO, "Deleted restaurant with id {0}", restaurantId);
+
+        if (addressId != null) {
+            String deleteAddressSql = "DELETE FROM addresses WHERE id = ?";
+            try {
+                jdbcTemplate.update(deleteAddressSql, addressId);
+                logger.log(Level.INFO, "Deleted address with id {0}", addressId);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error deleting address with id " + addressId, e);
+            }
+        }
     }
 }
