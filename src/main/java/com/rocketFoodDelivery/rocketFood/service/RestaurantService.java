@@ -115,28 +115,7 @@ public class RestaurantService {
         return restaurantDtos;
     }
 
-    // TODO
-
-    /**
-     * Creates a new restaurant and returns its information.
-     *
-     * @Transactional restaurant The data for the new restaurant.
-     * @return An Optional containing the created restaurant's information as an
-     *         ApiCreateRestaurantDto,
-     *         or Optional.empty() if the user with the provided user ID does not
-     *         exist or if an error occurs during creation.
-     */
-    // TODO
-
-    /**
-     * Creates a new restaurant and returns its information.
-     *
-     * @Transactional restaurant The data for the new restaurant.
-     * @return An Optional containing the created restaurant's information as an
-     *         ApiCreateRestaurantDto,
-     *         or Optional.empty() if the user with the provided user ID does not
-     *         exist or if an error occurs during creation.
-     */
+    
     @PersistenceContext
     private EntityManager entityManager;
 

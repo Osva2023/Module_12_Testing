@@ -26,14 +26,7 @@ public class RestaurantApiController {
         this.restaurantService = restaurantService;
     }
 
-    // TODO
-
-    /**
-     * Creates a new restaurant.
-     *
-     * @param restaurant The data for the new restaurant.
-     * @return ResponseEntity with the created restaurant's data, or a BadRequestException if creation fails.
-     */
+  
    @PostMapping("/api/restaurants")
 public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCreateRestaurantDto restaurantDto) {
     Optional<ApiCreateRestaurantDto> createdRestaurantDto = restaurantService.createRestaurant(restaurantDto);
