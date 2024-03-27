@@ -3,6 +3,7 @@ package com.rocketFoodDelivery.rocketFood.api;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,35 @@ public class RestaurantApiControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.price_range").value(2))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.phone").value("555-1234"));
     }
+@Test
+public void testGetAllRestaurantsWithParameters() throws Exception {
+    // Define the parameters
+    Integer rating = 3;
+    Integer priceRange = 2;
+
+    // Mock the service method
+    when(restaurantService.findRestaurantsByRatingAndPriceRange(rating, priceRange)).thenReturn(new ArrayList<>());
+
+    // Perform the GET request with parameters and check the status
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
+            .param("rating", rating.toString())
+            .param("price_range", priceRange.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(MockMvcResultMatchers.status().isOk());
+}
+@Test
+public void testGetAllRestaurantsWithInvalidParameters() throws Exception {
+    // Define invalid parameters
+    Integer rating = 6; // Invalid as rating should be between 1 and 5
+    Integer priceRange = 4; // Invalid as price range should be between 1 and 3
+
+    // Perform the GET request with invalid parameters and check the status
+    mockMvc.perform(MockMvcRequestBuilders.get("/api/restaurants")
+            .param("rating", rating.toString())
+            .param("price_range", priceRange.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
+}
 
 
 }

@@ -93,10 +93,17 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
      * @see RestaurantService#findRestaurantsByRatingAndPriceRange(Integer, Integer) for details on retrieving restaurant information.
      */
 
-    @GetMapping("/api/restaurants")
-    public ResponseEntity<Object> getAllRestaurants(
-        @RequestParam(name = "rating", required = false) Integer rating,
-        @RequestParam(name = "price_range", required = false) Integer priceRange) {
-        return ResponseBuilder.buildOkResponse(restaurantService.findRestaurantsByRatingAndPriceRange(rating, priceRange));
-    }
+     @GetMapping("/api/restaurants")
+     public ResponseEntity<Object> getAllRestaurants(
+         @RequestParam(name = "rating", required = false) Integer rating,
+         @RequestParam(name = "price_range", required = false) Integer priceRange) {
+     
+         // Validate the parameters
+         if ((rating != null && (rating < 1 || rating > 5)) || 
+             (priceRange != null && (priceRange < 1 || priceRange > 3))) {
+             return new ResponseEntity<>("Invalid parameters", HttpStatus.BAD_REQUEST);
+         }
+     
+         return ResponseBuilder.buildOkResponse(restaurantService.findRestaurantsByRatingAndPriceRange(rating, priceRange));
+     }
 }
