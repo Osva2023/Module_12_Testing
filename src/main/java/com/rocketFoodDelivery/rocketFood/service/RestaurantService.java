@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.FileHandler;
@@ -266,4 +267,11 @@ private static class RestaurantRowMapper implements RowMapper<Restaurant> {
             }
         }
     }
+    
+
+    public List<Map<String, Object>> getProductsForRestaurant(int restaurantId) {
+        String getProductsSql = "SELECT id, name, cost FROM products WHERE restaurant_id = ?";
+        return jdbcTemplate.queryForList(getProductsSql, restaurantId);
+    }
+    
 }

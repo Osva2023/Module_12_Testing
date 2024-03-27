@@ -10,6 +10,7 @@ import com.rocketFoodDelivery.rocketFood.models.Restaurant;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -135,4 +136,16 @@ public ResponseEntity<Map<String, Object>> deleteRestaurant(@PathVariable int id
      
          return ResponseBuilder.buildOkResponse(restaurantService.findRestaurantsByRatingAndPriceRange(rating, priceRange));
      }
+     @GetMapping("/api/products")
+public ResponseEntity<?> getProductsForRestaurant(@RequestParam int restaurant) {
+    List<Map<String, Object>> products = restaurantService.getProductsForRestaurant(restaurant);
+    if (products.isEmpty()) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Resource not found");
+        error.put("details", "Products from the restaurant " + restaurant + " not found");
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+    return new ResponseEntity<>(products, HttpStatus.OK);
+}
+
 }

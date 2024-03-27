@@ -1,12 +1,14 @@
 package com.rocketFoodDelivery.rocketFood.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Optional;
 
-import static org.mockito.Mockito.doNothing;
+import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -135,6 +138,29 @@ public void testDeleteRestaurant_Success() throws Exception {
     mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/{id}", restaurantId))
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"));
+}
+@Test
+public void testGetProductsForRestaurant() {
+    int restaurantId = 1;
+    Map<String, Object> product = new HashMap<>();
+    product.put("id", 1);
+    product.put("name", "Cheeseburger");
+    product.put("cost", 10.0);
+    when(restaurantService.getProductsForRestaurant(restaurantId)).thenReturn(Collections.singletonList(product));
+
+    ResponseEntity<?> response = restaurantController.getProductsForRestaurant(restaurantId);
+
+    assertEquals(200, response.getStatusCode().value());
+    assertEquals(Collections.singletonList(product), response.getBody());
+}
+@Test
+public void testGetProductsForRestaurant_NotFound() {
+    int restaurantId = 1;
+    when(restaurantService.getProductsForRestaurant(restaurantId)).thenReturn(Collections.emptyList());
+
+    ResponseEntity<?> response = restaurantController.getProductsForRestaurant(restaurantId);
+
+    assertEquals(404, response.getStatusCode().value());
 }
 
 }
