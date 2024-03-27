@@ -73,7 +73,7 @@ public class RestaurantApiControllerTest {
         // Mock data
         int restaurantId = 1;
         ApiCreateRestaurantDto updatedData = new ApiCreateRestaurantDto();
-        updatedData.setName("Updated Name");
+        updatedData.setName("Updated Namaste");
         updatedData.setPriceRange(2);
         updatedData.setPhone("555-1234");
 
@@ -88,7 +88,7 @@ public class RestaurantApiControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Updated Name"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.name").value("Updated Namaste"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.price_range").value(2))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.phone").value("555-1234"));
     }

@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rocketFoodDelivery.rocketFood.models.Address;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
@@ -33,6 +35,8 @@ public class RestaurantService {
     private final UserRepository userRepository;
     private final AddressService addressService;
     private final AddressRepository addressRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private static final Logger logger = Logger.getLogger(RestaurantService.class.getName());
 
     @Autowired
     public RestaurantService(
@@ -42,7 +46,8 @@ public class RestaurantService {
             ProductOrderRepository productOrderRepository,
             UserRepository userRepository,
             AddressService addressService,
-            AddressRepository addressRepository) {
+            AddressRepository addressRepository,
+            JdbcTemplate jdbcTemplate) { // Add this line
         this.restaurantRepository = restaurantRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
@@ -50,12 +55,15 @@ public class RestaurantService {
         this.userRepository = userRepository;
         this.addressService = addressService;
         this.addressRepository = addressRepository;
+        this.jdbcTemplate = jdbcTemplate; // And this line
     }
 
     public List<Restaurant> findAllRestaurants() {
         return restaurantRepository.findAll();
     }
+    
 
+    
     /**
      * Retrieves a restaurant with its details, including the average rating, based
      * on the provided restaurant ID.
@@ -87,16 +95,6 @@ public class RestaurantService {
         }
     }
 
-    /**
-     * Finds restaurants based on the provided rating and price range.
-     *
-     * @param rating     The rating for filtering the restaurants.
-     * @param priceRange The price range for filtering the restaurants.
-     * @return A list of ApiRestaurantDto objects representing the selected
-     *         restaurants.
-     *         Each object contains the restaurant's ID, name, price range, and a
-     *         rounded-up average rating.
-     */
     public List<ApiRestaurantDto> findRestaurantsByRatingAndPriceRange(Integer rating, Integer priceRange) {
         List<Object[]> restaurants = restaurantRepository.findRestaurantsByRatingAndPriceRange(rating, priceRange);
 
@@ -115,7 +113,6 @@ public class RestaurantService {
         return restaurantDtos;
     }
 
-    
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -200,10 +197,30 @@ public class RestaurantService {
      *         or Optional.empty() if the restaurant with the specified ID is not
      *         found or if an error occurs during the update.
      */
-    @Transactional
-    public Optional<ApiCreateRestaurantDto> updateRestaurant(int id, ApiCreateRestaurantDto updatedRestaurantDto) {
-        return null; // TODO return proper object
-    }
+
+     @Transactional
+     public Optional<ApiCreateRestaurantDto> updateRestaurant(int id, ApiCreateRestaurantDto updatedRestaurantDto) {
+         try {
+            String checkSql = "SELECT COUNT(*) FROM restaurants WHERE id = ?";
+            Integer count = jdbcTemplate.queryForObject(checkSql, (rs, rowNum) -> rs.getInt(1), id);
+     
+             if (count == null || count == 0) {
+                 return Optional.empty();
+             }
+     
+             String updateSql = "UPDATE restaurants SET name = ?, price_range = ?, phone = ? WHERE id = ?";
+     
+             logger.info("Executing SQL query: " + updateSql);
+             logger.info("With parameters: name=" + updatedRestaurantDto.getName() + ", price_range=" + updatedRestaurantDto.getPriceRange() + ", phone=" + updatedRestaurantDto.getPhone() + ", id=" + id);
+     
+             jdbcTemplate.update(updateSql, updatedRestaurantDto.getName(), updatedRestaurantDto.getPriceRange(), updatedRestaurantDto.getPhone(), id);
+     
+             return Optional.of(updatedRestaurantDto);
+         } catch (Exception e) {
+             logger.log(Level.SEVERE, "Exception in updateRestaurant", e);
+             return Optional.empty();
+         }
+     }
 
     // TODO
 

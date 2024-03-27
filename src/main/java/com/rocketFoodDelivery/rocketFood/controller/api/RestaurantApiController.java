@@ -65,7 +65,23 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
      */
     @PutMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> updateRestaurant(@PathVariable("id") int id, @Valid @RequestBody ApiCreateRestaurantDto restaurantUpdateData, BindingResult result) {
-        return null; // TODO return proper object
+        if (result.hasErrors()) {
+            return new ResponseEntity<>(result.getAllErrors(), HttpStatus.BAD_REQUEST);
+        }
+    
+        Optional<ApiCreateRestaurantDto> updatedRestaurant = restaurantService.updateRestaurant(id, restaurantUpdateData);
+    
+        if (!updatedRestaurant.isPresent()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "resource not found");
+            response.put("details", "restaurant with id " + id + " not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Success");
+        response.put("data", updatedRestaurant.get());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -83,15 +99,7 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
         return ResponseBuilder.buildOkResponse(restaurantWithRatingOptional.get());
     }
 
-    /**
-     * Returns a list of restaurants given a rating and price range
-     *
-     * @param rating integer from 1 to 5 (optional)
-     * @param priceRange integer from 1 to 3 (optional)
-     * @return A list of restaurants that match the specified criteria
-     * 
-     * @see RestaurantService#findRestaurantsByRatingAndPriceRange(Integer, Integer) for details on retrieving restaurant information.
-     */
+  
 
      @GetMapping("/api/restaurants")
      public ResponseEntity<Object> getAllRestaurants(

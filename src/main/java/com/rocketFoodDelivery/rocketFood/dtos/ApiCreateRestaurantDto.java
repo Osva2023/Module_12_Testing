@@ -25,7 +25,7 @@ public class ApiCreateRestaurantDto {
 
     @JsonProperty("price_range")
     @Min(1)
-    @Max(3)
+    @Max(5)
     private int priceRange;
 
     private String phone;
