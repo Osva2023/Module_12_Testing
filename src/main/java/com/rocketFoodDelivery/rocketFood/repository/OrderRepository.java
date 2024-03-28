@@ -23,8 +23,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findOrdersByRestaurantId(@Param("restaurantId") int restaurantId);
 
     // TODO
-    @Modifying
-    @Transactional
-    @Query(nativeQuery = true, value = "TODO Write SQL query here")
-    void deleteOrderById(@Param("orderId") int orderId);
-}
+   
+        @Modifying
+        @Transactional
+        @Query("update Order o set o.order_status.name = :status where o.id = :orderId")
+        void updateOrderStatus(@Param("orderId") int orderId, @Param("status") String status);
+    }

@@ -2,9 +2,11 @@ package com.rocketFoodDelivery.rocketFood.service;
 
 import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDto;
+import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
+import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.models.Restaurant;
 import com.rocketFoodDelivery.rocketFood.repository.*;
-
+import com.rocketFoodDelivery.rocketFood.models.Order;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -14,9 +16,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rocketFoodDelivery.rocketFood.models.Address;
+import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import org.springframework.jdbc.core.RowMapper;
-
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -40,49 +45,37 @@ public class RestaurantService {
     private final ProductOrderRepository productOrderRepository;
     private final UserRepository userRepository;
     private final AddressService addressService;
+    private OrderStatusRepository orderStatusRepository;
     private final AddressRepository addressRepository;
     private final JdbcTemplate jdbcTemplate;
     private static final Logger logger = Logger.getLogger(RestaurantService.class.getName());
 
     @Autowired
-    public RestaurantService(
-            RestaurantRepository restaurantRepository,
-            ProductRepository productRepository,
-            OrderRepository orderRepository,
-            ProductOrderRepository productOrderRepository,
-            UserRepository userRepository,
-            AddressService addressService,
-            AddressRepository addressRepository,
-            JdbcTemplate jdbcTemplate) { // Add this line
-        this.restaurantRepository = restaurantRepository;
-        this.productRepository = productRepository;
-        this.orderRepository = orderRepository;
-        this.productOrderRepository = productOrderRepository;
-        this.userRepository = userRepository;
-        this.addressService = addressService;
-        this.addressRepository = addressRepository;
-        this.jdbcTemplate = jdbcTemplate; // And this line
-    }
+public RestaurantService(
+        RestaurantRepository restaurantRepository,
+        ProductRepository productRepository,
+        OrderRepository orderRepository,
+        ProductOrderRepository productOrderRepository,
+        UserRepository userRepository,
+        AddressService addressService,
+        OrderStatusRepository orderStatusRepository, // Add this line
+        AddressRepository addressRepository,
+        JdbcTemplate jdbcTemplate) { 
+    this.restaurantRepository = restaurantRepository;
+    this.productRepository = productRepository;
+    this.orderRepository = orderRepository;
+    this.productOrderRepository = productOrderRepository;
+    this.userRepository = userRepository;
+    this.addressService = addressService;
+    this.orderStatusRepository = orderStatusRepository; // And this line
+    this.addressRepository = addressRepository;
+    this.jdbcTemplate = jdbcTemplate; 
+}
 
     public List<Restaurant> findAllRestaurants() {
         return restaurantRepository.findAll();
     }
-    
 
-    
-    /**
-     * Retrieves a restaurant with its details, including the average rating, based
-     * on the provided restaurant ID.
-     *
-     * @param id The unique identifier of the restaurant to retrieve.
-     * @return An Optional containing a RestaurantDTO with details such as id, name,
-     *         price range, and average rating.
-     *         If the restaurant with the given id is not found, an empty Optional
-     *         is returned.
-     *
-     * @see RestaurantRepository#findRestaurantWithAverageRatingById(int) for the
-     *      raw query details from the repository.
-     */
     public Optional<ApiRestaurantDto> findRestaurantWithAverageRatingById(int id) {
         List<Object[]> restaurant = restaurantRepository.findRestaurantWithAverageRatingById(id);
 
@@ -178,15 +171,7 @@ public class RestaurantService {
 
         return Optional.empty();
     }
-    // TODO
 
-    /**
-     * Finds a restaurant by its ID.
-     *
-     * @param id The ID of the restaurant to retrieve.
-     * @return An Optional containing the restaurant with the specified ID,
-     *         or Optional.empty() if no restaurant is found.
-     */
     public Restaurant getRestaurant(int id) {
         String sql = "SELECT * FROM restaurants WHERE id = ?";
         try {
@@ -195,44 +180,45 @@ public class RestaurantService {
             throw new NoSuchElementException("Restaurant with id " + id + " not found");
         }
     }
-private static class RestaurantRowMapper implements RowMapper<Restaurant> {
+
+    private static class RestaurantRowMapper implements RowMapper<Restaurant> {
         @Override
         public Restaurant mapRow(ResultSet rs, int rowNum) throws SQLException {
             Restaurant restaurant = new Restaurant();
             restaurant.setId(rs.getInt("id"));
             restaurant.setName(rs.getString("name"));
             restaurant.setPriceRange(rs.getInt("price_range"));
-            
+
             return restaurant;
         }
     }
-    
 
-     @Transactional
-     public Optional<ApiCreateRestaurantDto> updateRestaurant(int id, ApiCreateRestaurantDto updatedRestaurantDto) {
-         try {
+    @Transactional
+    public Optional<ApiCreateRestaurantDto> updateRestaurant(int id, ApiCreateRestaurantDto updatedRestaurantDto) {
+        try {
             String checkSql = "SELECT COUNT(*) FROM restaurants WHERE id = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, (rs, rowNum) -> rs.getInt(1), id);
-     
-             if (count == null || count == 0) {
-                 return Optional.empty();
-             }
-     
-             String updateSql = "UPDATE restaurants SET name = ?, price_range = ?, phone = ? WHERE id = ?";
-     
-             logger.info("Executing SQL query: " + updateSql);
-             logger.info("With parameters: name=" + updatedRestaurantDto.getName() + ", price_range=" + updatedRestaurantDto.getPriceRange() + ", phone=" + updatedRestaurantDto.getPhone() + ", id=" + id);
-     
-             jdbcTemplate.update(updateSql, updatedRestaurantDto.getName(), updatedRestaurantDto.getPriceRange(), updatedRestaurantDto.getPhone(), id);
-     
-             return Optional.of(updatedRestaurantDto);
-         } catch (Exception e) {
-             logger.log(Level.SEVERE, "Exception in updateRestaurant", e);
-             return Optional.empty();
-         }
-     }
 
-    // TODO
+            if (count == null || count == 0) {
+                return Optional.empty();
+            }
+
+            String updateSql = "UPDATE restaurants SET name = ?, price_range = ?, phone = ? WHERE id = ?";
+
+            logger.info("Executing SQL query: " + updateSql);
+            logger.info("With parameters: name=" + updatedRestaurantDto.getName() + ", price_range="
+                    + updatedRestaurantDto.getPriceRange() + ", phone=" + updatedRestaurantDto.getPhone() + ", id="
+                    + id);
+
+            jdbcTemplate.update(updateSql, updatedRestaurantDto.getName(), updatedRestaurantDto.getPriceRange(),
+                    updatedRestaurantDto.getPhone(), id);
+
+            return Optional.of(updatedRestaurantDto);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Exception in updateRestaurant", e);
+            return Optional.empty();
+        }
+    }
 
     @Transactional
     public void deleteRestaurant(int restaurantId) {
@@ -248,7 +234,8 @@ private static class RestaurantRowMapper implements RowMapper<Restaurant> {
 
         String getRestaurantAddressIdSql = "SELECT address_id FROM restaurants WHERE id = ?";
         Integer addressId = jdbcTemplate.queryForObject(getRestaurantAddressIdSql, Integer.class, restaurantId);
-        logger.log(Level.INFO, "Got address id {0} for restaurant with id {1}", new Object[]{addressId, restaurantId});
+        logger.log(Level.INFO, "Got address id {0} for restaurant with id {1}",
+                new Object[] { addressId, restaurantId });
 
         String deleteRestaurantSql = "DELETE FROM restaurants WHERE id = ?";
         int rowsAffected = jdbcTemplate.update(deleteRestaurantSql, restaurantId);
@@ -267,11 +254,22 @@ private static class RestaurantRowMapper implements RowMapper<Restaurant> {
             }
         }
     }
-    
 
     public List<Map<String, Object>> getProductsForRestaurant(int restaurantId) {
         String getProductsSql = "SELECT id, name, cost FROM products WHERE restaurant_id = ?";
         return jdbcTemplate.queryForList(getProductsSql, restaurantId);
     }
-    
+    public OrderStatus changeOrderStatus(int orderId, String newStatusName) {
+    Optional<OrderStatus> optionalStatus = orderStatusRepository.findByName(newStatusName);
+    if (!optionalStatus.isPresent()) {
+        throw new BadRequestException("Invalid or missing parameters", "Details about the error...");
+    }
+    OrderStatus newStatus = optionalStatus.get();
+
+    Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order with id " + orderId + " not found"));
+    order.setOrder_status(newStatus);
+    orderRepository.save(order);
+
+    return newStatus;
+}
 }

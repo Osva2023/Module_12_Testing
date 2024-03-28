@@ -1,7 +1,14 @@
 package com.rocketFoodDelivery.rocketFood.exception;
 
 public class BadRequestException extends RuntimeException {
-       public BadRequestException(String message) {
+    private String details;
+
+    public BadRequestException(String message, String details) {
         super(message);
-    } 
+        this.details = details;
+    }
+
+    public String getDetails() {
+        return details;
+    }
 }

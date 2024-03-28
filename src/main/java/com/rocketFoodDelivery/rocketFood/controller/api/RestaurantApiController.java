@@ -5,6 +5,7 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.exception.*;
+import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.models.Restaurant;
 
 import jakarta.validation.Valid;
@@ -146,6 +147,18 @@ public ResponseEntity<?> getProductsForRestaurant(@RequestParam int restaurant) 
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
     return new ResponseEntity<>(products, HttpStatus.OK);
+}
+@PostMapping("/api/{order_id}/status")
+public ResponseEntity<?> changeOrderStatus(@PathVariable("order_id") int orderId, @RequestBody Map<String, String> body) {
+    try {
+        String status = body.get("status");
+        OrderStatus newStatus = restaurantService.changeOrderStatus(orderId, status);
+        return ResponseBuilder.buildOkResponse(newStatus);
+    } catch (BadRequestException ex) {
+        return ResponseBuilder.buildBadRequestExceptionResponse(ex);
+    } catch (ResourceNotFoundException ex) {
+        return ResponseBuilder.buildResourceNotFoundExceptionResponse(ex);
+    }
 }
 
 }
