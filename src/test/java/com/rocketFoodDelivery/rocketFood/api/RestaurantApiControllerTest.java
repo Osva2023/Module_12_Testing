@@ -1,6 +1,7 @@
 package com.rocketFoodDelivery.rocketFood.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -29,6 +30,7 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiAddressDto;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiErrorDTO;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
+import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
 import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
@@ -220,5 +222,33 @@ public void testChangeOrderStatus_BadRequest() {
     
 }
 
+@Test
+public void testGetRestaurantById_Success() {
+    int id = 1;
+    ApiRestaurantDto restaurant = new ApiRestaurantDto();
+    // set properties of restaurant as needed
 
+    when(restaurantService.findRestaurantWithAverageRatingById(id)).thenReturn(Optional.of(restaurant));
+
+    ResponseEntity<?> response = restaurantController.getRestaurantById(id);
+
+    assertEquals(200, response.getStatusCode().value());
+    assertTrue(response.getBody() instanceof ApiResponseDTO);
+    assertEquals(restaurant, ((ApiResponseDTO) response.getBody()).getData());
+}
+@Test
+public void testGetRestaurantById_NotFound() {
+    int id = 1;
+
+    when(restaurantService.findRestaurantWithAverageRatingById(id)).thenReturn(Optional.empty());
+
+    Exception exception = assertThrows(ResourceNotFoundException.class, () -> {
+        restaurantController.getRestaurantById(id);
+    });
+
+    String expectedMessage = String.format("Restaurant with id %d not found", id);
+    String actualMessage = exception.getMessage();
+
+    assertTrue(actualMessage.contains(expectedMessage));
+}
 }
