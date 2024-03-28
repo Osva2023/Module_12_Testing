@@ -1,6 +1,7 @@
 package com.rocketFoodDelivery.rocketFood.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import java.util.Collections;
@@ -26,6 +27,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.controller.api.RestaurantApiController;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiAddressDto;
 import com.rocketFoodDelivery.rocketFood.dtos.ApiCreateRestaurantDto;
+import com.rocketFoodDelivery.rocketFood.dtos.ApiErrorDTO;
+import com.rocketFoodDelivery.rocketFood.dtos.ApiResponseDTO;
+import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
+import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
+import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 
@@ -162,5 +168,57 @@ public void testGetProductsForRestaurant_NotFound() {
 
     assertEquals(404, response.getStatusCode().value());
 }
+@Test
+public void testChangeOrderStatus() {
+    int orderId = 1;
+    String newStatusName = "Delivered";
+    OrderStatus newStatus = new OrderStatus();
+    newStatus.setName(newStatusName);
+
+    when(restaurantService.changeOrderStatus(orderId, newStatusName)).thenReturn(newStatus);
+
+    Map<String, String> statusMap = new HashMap<>();
+    statusMap.put("status", newStatusName);
+
+    ResponseEntity<?> response = restaurantController.changeOrderStatus(orderId, statusMap);
+
+    assertEquals(200, response.getStatusCode().value());
+    assertTrue(response.getBody() instanceof ApiResponseDTO);
+    ApiResponseDTO apiResponse = (ApiResponseDTO) response.getBody();
+    assertEquals("Success", apiResponse.getMessage());
+}
+@Test
+public void testChangeOrderStatus_NotFound() {
+    int orderId = 1;
+    String newStatusName = "Delivered";
+
+    when(restaurantService.changeOrderStatus(orderId, newStatusName)).thenThrow(new ResourceNotFoundException("Order with id " + orderId + " not found"));
+
+    Map<String, String> statusMap = new HashMap<>();
+    statusMap.put("status", newStatusName);
+
+    ResponseEntity<?> response = restaurantController.changeOrderStatus(orderId, statusMap);
+
+    assertEquals(404, response.getStatusCode().value());
+    assertTrue(response.getBody() instanceof ApiErrorDTO);
+    assertEquals("Order with id " + orderId + " not found", ((ApiErrorDTO) response.getBody()).getDetails());
+}
+@Test
+public void testChangeOrderStatus_BadRequest() {
+    int orderId = 1;
+    String newStatusName = "InvalidStatus";
+
+    when(restaurantService.changeOrderStatus(orderId, newStatusName)).thenThrow(new BadRequestException("Invalid or missing parameters", null));
+
+    Map<String, String> statusMap = new HashMap<>();
+    statusMap.put("status", newStatusName);
+
+    ResponseEntity<?> response = restaurantController.changeOrderStatus(orderId, statusMap);
+
+    assertEquals(400, response.getStatusCode().value());
+    assertTrue(response.getBody() instanceof ApiErrorDTO);
+    
+}
+
 
 }
