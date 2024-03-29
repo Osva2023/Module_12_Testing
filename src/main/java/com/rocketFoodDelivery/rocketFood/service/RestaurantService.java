@@ -279,21 +279,22 @@ public RestaurantService(
 
     public List<Map<String, Object>> getOrdersByUserTypeAndId(String type, int id) {
         String sql = "SELECT o.id, c.id as customer_id, c.email as customer_email, " +
-                     "CONCAT(a.street_address, ', ', a.city, ', ', a.postal_code) as customer_address, " +
-                     "r.id as restaurant_id, r.name as restaurant_name, " +
-                     "CONCAT(ra.street_address, ', ', ra.city, ', ', ra.postal_code) as restaurant_address, " +
-                     "cour.id as courier_id, cour.email as courier_email, os.name as status, " +
-                     "p.id as product_id, p.name as product_name, op.product_quantity, p.cost as unit_cost, " +
-                     "(op.product_quantity * p.cost) as total_cost " +
-                     "FROM orders o " +
-                     "JOIN customers c ON o.customer_id = c.id " +
-                     "JOIN addresses a ON c.address_id = a.id " +
-                     "JOIN restaurants r ON o.restaurant_id = r.id " +
-                     "JOIN addresses ra ON r.address_id = ra.id " +
-                     "JOIN courier cour ON o.courier_id = cour.id " +
-                     "JOIN order_statuses os ON o.status_id = os.id " +
-                     "JOIN product_orders op ON o.id = op.order_id " +
-                     "JOIN products p ON op.product_id = p.id ";
+        "CONCAT(a.street_address, ', ', a.city, ', ', a.postal_code) as customer_address, " +
+        "r.id as restaurant_id, r.name as restaurant_name, " +
+        "CONCAT(ra.street_address, ', ', ra.city, ', ', ra.postal_code) as restaurant_address, " +
+        "cour.id as courier_id, u.name as courier_name, os.name as status, " +
+        "p.id as product_id, p.name as product_name, op.product_quantity, p.cost as unit_cost, " +
+        "(op.product_quantity * p.cost) as total_cost " +
+        "FROM orders o " +
+        "JOIN customers c ON o.customer_id = c.id " +
+        "JOIN addresses a ON c.address_id = a.id " +
+        "JOIN restaurants r ON o.restaurant_id = r.id " +
+        "JOIN addresses ra ON r.address_id = ra.id " +
+        "JOIN courier cour ON o.courier_id = cour.id " +
+        "JOIN users u ON cour.user_id = u.id " +
+        "JOIN order_statuses os ON o.status_id = os.id " +
+        "JOIN product_orders op ON o.id = op.order_id " +
+        "JOIN products p ON op.product_id = p.id ";
     
         if ("customer".equalsIgnoreCase(type)) {
             sql += "WHERE c.id = ?";

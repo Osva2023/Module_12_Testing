@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import java.util.Collections;
 import java.util.HashMap;
@@ -251,4 +253,32 @@ public void testGetRestaurantById_NotFound() {
 
     assertTrue(actualMessage.contains(expectedMessage));
 }
+
+@Test
+    public void testGetOrdersByUserTypeAndId_Success() {
+        when(restaurantService.getOrdersByUserTypeAndId(anyString(), anyInt()))
+                .thenReturn(Collections.singletonList(Map.of("key", "value")));
+
+        ResponseEntity<Object> response = restaurantController.getOrdersByUserTypeAndId("customer", 1);
+
+        assertEquals(200, response.getStatusCode().value());
+    }
+    @Test
+    public void testGetOrdersByUserTypeAndId_ResourceNotFound() {
+        when(restaurantService.getOrdersByUserTypeAndId(anyString(), anyInt()))
+                .thenReturn(Collections.emptyList());
+
+        ResponseEntity<Object> response = restaurantController.getOrdersByUserTypeAndId("customer", 1);
+
+        assertEquals(404, response.getStatusCode().value());
+    }
+    @Test
+    public void testGetOrdersByUserTypeAndId_BadRequest() {
+        when(restaurantService.getOrdersByUserTypeAndId(anyString(), anyInt()))
+                .thenThrow(new IllegalArgumentException());
+
+        ResponseEntity<Object> response = restaurantController.getOrdersByUserTypeAndId("invalid", 1);
+
+        assertEquals(400, response.getStatusCode().value());
+    }
 }
