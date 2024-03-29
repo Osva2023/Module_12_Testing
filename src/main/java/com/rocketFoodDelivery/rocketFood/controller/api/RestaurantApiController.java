@@ -53,39 +53,22 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
      * @param id The ID of the restaurant to delete.
      * @return ResponseEntity with a success message, or a ResourceNotFoundException if the restaurant is not found.
      */
-   @DeleteMapping("/api/restaurants/{id}")
-public ResponseEntity<Map<String, Object>> deleteRestaurant(@PathVariable int id) {
-    Map<String, Object> response = new HashMap<>();
-    try {
-        // Get the restaurant before deleting it
-        Restaurant restaurant = restaurantService.getRestaurant(id);
-        // Delete the restaurant
-        restaurantService.deleteRestaurant(id);
-        // Prepare the success response
-        response.put("message", "Success");
-        response.put("data", restaurant);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoSuchElementException e) {
-        // Prepare the error response
-        response.put("error", "Resource Not found");
-        response.put("details", "Restaurant with id " + id + " not found");
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-    } catch (Exception e) {
-        response.put("message", "Error deleting restaurant");
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    @DeleteMapping("/api/restaurants/{id}")
+    public ResponseEntity<Object> deleteRestaurant(@PathVariable int id) {
+        try {
+            // Get the restaurant before deleting it
+            Restaurant restaurant = restaurantService.getRestaurant(id);
+            // Delete the restaurant
+            restaurantService.deleteRestaurant(id);
+            // Prepare the success response
+            return ResponseBuilder.buildOkResponse(restaurant);
+        } catch (NoSuchElementException e) {
+            // Prepare the error response
+            return ResponseBuilder.buildResourceNotFoundExceptionResponse(new ResourceNotFoundException("Restaurant with id " + id + " not found"));
+        }
     }
-}
 
-    // TODO
-
-    /**
-     * Updates an existing restaurant by ID.
-     *
-     * @param id                    The ID of the restaurant to update.
-     * @param restaurantUpdateData  The updated data for the restaurant.
-     * @param result                BindingResult for validation.
-     * @return ResponseEntity with the updated restaurant's data
-     */
+  
     @PutMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> updateRestaurant(@PathVariable("id") int id, @Valid @RequestBody ApiCreateRestaurantDto restaurantUpdateData, BindingResult result) {
         if (result.hasErrors()) {
@@ -107,14 +90,6 @@ public ResponseEntity<Map<String, Object>> deleteRestaurant(@PathVariable int id
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    /**
-     * Retrieves details for a restaurant, including its average rating, based on the provided restaurant ID.
-     *
-     * @param id The unique identifier of the restaurant to retrieve.
-     * @return ResponseEntity with HTTP 200 OK if the restaurant is found, HTTP 404 Not Found otherwise.
-     *
-     * @see RestaurantService#findRestaurantWithAverageRatingById(int) for details on retrieving restaurant information.
-     */
     @GetMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> getRestaurantById(@PathVariable int id) {
         Optional<ApiRestaurantDto> restaurantWithRatingOptional = restaurantService.findRestaurantWithAverageRatingById(id);

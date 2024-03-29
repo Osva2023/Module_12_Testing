@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import org.springframework.jdbc.core.RowMapper;
 import java.util.Optional;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.List;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,7 @@ import com.rocketFoodDelivery.rocketFood.dtos.ApiRestaurantDto;
 import com.rocketFoodDelivery.rocketFood.exception.BadRequestException;
 import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
+import com.rocketFoodDelivery.rocketFood.models.Restaurant;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
 import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
@@ -153,15 +155,42 @@ public void testGetAllRestaurantsWithInvalidParameters() throws Exception {
 public void testDeleteRestaurant_Success() throws Exception {
     // Mock data
     int restaurantId = 30;
+    RestaurantService restaurantService = mock(RestaurantService.class);
 
     // Mock service behavior
-    doNothing().when(restaurantService).deleteRestaurant(restaurantId);
+    when(restaurantService.getRestaurant(anyInt())).thenReturn(new Restaurant());
+doNothing().when(restaurantService).deleteRestaurant(anyInt());
+RestaurantApiController restaurantApiController = new RestaurantApiController(restaurantService);
 
+MockMvc mockMvc = MockMvcBuilders.standaloneSetup(restaurantApiController).build();
     // Validate response code and content
     mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/{id}", restaurantId))
             .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Success"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data").exists()); // Check that the "data" field exists in the response
 }
+@Test
+public void testDeleteRestaurant_NotFound() throws Exception {
+    // Mock data
+    int restaurantId = 30;
+    RestaurantService restaurantService = mock(RestaurantService.class);
+
+    // Mock service behavior
+    when(restaurantService.getRestaurant(anyInt())).thenThrow(new NoSuchElementException());
+
+    // Inject the mocked RestaurantService into RestaurantApiController
+    RestaurantApiController restaurantApiController = new RestaurantApiController(restaurantService);
+
+    // MockMvc setup
+    MockMvc mockMvc = MockMvcBuilders.standaloneSetup(restaurantApiController).build();
+
+    // Validate response code and content
+    mockMvc.perform(MockMvcRequestBuilders.delete("/api/restaurants/{id}", restaurantId))
+            .andExpect(MockMvcResultMatchers.status().isNotFound())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("404 Not Found"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.details").value("Restaurant with id " + restaurantId + " not found"));
+}
+
 @Test
 public void testGetProductsForRestaurant() {
     int restaurantId = 1;
