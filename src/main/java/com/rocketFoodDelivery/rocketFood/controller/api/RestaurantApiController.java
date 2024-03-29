@@ -7,7 +7,7 @@ import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.exception.*;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.models.Restaurant;
-
+import com.rocketFoodDelivery.rocketFood.models.Order;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -160,5 +160,20 @@ public ResponseEntity<?> changeOrderStatus(@PathVariable("order_id") int orderId
         return ResponseBuilder.buildResourceNotFoundExceptionResponse(ex);
     }
 }
+
+
+@GetMapping("/api/orders")
+public ResponseEntity<Object> getOrdersByUserTypeAndId(@RequestParam String type, @RequestParam int id) {
+    try {
+        List<Map<String, Object>> orders = restaurantService.getOrdersByUserTypeAndId(type, id);
+        if (orders.isEmpty()) {
+            return ResponseBuilder.buildResourceNotFoundExceptionResponse(new ResourceNotFoundException("No orders found"));
+        }
+        return ResponseBuilder.buildOkResponse(orders);
+    } catch (IllegalArgumentException e) {
+        return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Invalid or missing parameters", null));
+    }
+}
+
 
 }

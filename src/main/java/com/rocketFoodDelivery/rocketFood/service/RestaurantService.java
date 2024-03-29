@@ -16,7 +16,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rocketFoodDelivery.rocketFood.models.Address;
+import com.rocketFoodDelivery.rocketFood.models.Courier;
+import com.rocketFoodDelivery.rocketFood.models.Customer;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
+import com.rocketFoodDelivery.rocketFood.models.Product;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.data.jpa.repository.Modifying;
@@ -271,5 +274,37 @@ public RestaurantService(
     orderRepository.save(order);
 
     return newStatus;
-}
+    }
+
+
+    public List<Map<String, Object>> getOrdersByUserTypeAndId(String type, int id) {
+        String sql = "SELECT o.id, c.id as customer_id, c.email as customer_email, " +
+                     "CONCAT(a.street_address, ', ', a.city, ', ', a.postal_code) as customer_address, " +
+                     "r.id as restaurant_id, r.name as restaurant_name, " +
+                     "CONCAT(ra.street_address, ', ', ra.city, ', ', ra.postal_code) as restaurant_address, " +
+                     "cour.id as courier_id, cour.email as courier_email, os.name as status, " +
+                     "p.id as product_id, p.name as product_name, op.product_quantity, p.cost as unit_cost, " +
+                     "(op.product_quantity * p.cost) as total_cost " +
+                     "FROM orders o " +
+                     "JOIN customers c ON o.customer_id = c.id " +
+                     "JOIN addresses a ON c.address_id = a.id " +
+                     "JOIN restaurants r ON o.restaurant_id = r.id " +
+                     "JOIN addresses ra ON r.address_id = ra.id " +
+                     "JOIN courier cour ON o.courier_id = cour.id " +
+                     "JOIN order_statuses os ON o.status_id = os.id " +
+                     "JOIN product_orders op ON o.id = op.order_id " +
+                     "JOIN products p ON op.product_id = p.id ";
+    
+        if ("customer".equalsIgnoreCase(type)) {
+            sql += "WHERE c.id = ?";
+        } else if ("courier".equalsIgnoreCase(type)) {
+            sql += "WHERE cour.id = ?";
+        } else if ("restaurant".equalsIgnoreCase(type)) {
+            sql += "WHERE r.id = ?";
+        } else {
+            throw new IllegalArgumentException("Invalid user type");
+        }
+    
+        return jdbcTemplate.queryForList(sql, id);
+    }
 }

@@ -21,7 +21,6 @@ public class Order {
     @GeneratedValue( strategy = GenerationType.IDENTITY)
     private int id;
 
-
     @ManyToOne(cascade = CascadeType.REMOVE)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "restaurant_id" , nullable = false)
@@ -34,7 +33,6 @@ public class Order {
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @OnDelete(action = OnDeleteAction.CASCADE)
-
     @JoinColumn(name = "status_id", nullable = false)
     private OrderStatus order_status ;
 
@@ -47,4 +45,21 @@ public class Order {
     @Min(1)
     @Max(5)
     private int restaurant_rating;
+
+    public void setOrderStatus(OrderStatus order_status) {
+        this.order_status = order_status;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public void setCourier(Courier courier) {
+        this.courier = courier;
+    }
+    
 }

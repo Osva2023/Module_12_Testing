@@ -37,4 +37,28 @@ public class Customer {
     @Email
     @Column(nullable = false)
     private String email;
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setUserEntity(UserEntity userEntity) {
+        this.userEntity = userEntity;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }
