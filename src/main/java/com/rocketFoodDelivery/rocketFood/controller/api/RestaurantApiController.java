@@ -177,9 +177,19 @@ public ResponseEntity<Object> getOrdersByUserTypeAndId(@RequestParam String type
 @PostMapping("/api/orders")
 public ResponseEntity<Object> createOrder(@RequestBody Map<String, Object> request) {
     try {
+        if (!request.containsKey("courier_id")) {
+            return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Courier id is missing", null));
+        }
+
+        int courierId = (int) request.get("courier_id"); // Extract the courier_id from the request
+
+        // Check if courierId exists
+        if (courierId <= 0) {
+            return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Courier id does not exist", null));
+        }
+
         int restaurantId = (int) request.get("restaurant_id");
         int customerId = (int) request.get("customer_id");
-        int courierId = (int) request.get("courier_id"); // Extract the courier_id from the request
         List<Map<String, Integer>> products = (List<Map<String, Integer>>) request.get("products");
 
         // Try to create the order

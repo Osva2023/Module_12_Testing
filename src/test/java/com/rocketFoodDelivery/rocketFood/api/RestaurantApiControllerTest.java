@@ -5,14 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.ArrayList;
-
+import org.springframework.jdbc.core.RowMapper;
 import java.util.Optional;
 import java.util.Map;
+import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -22,9 +26,17 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rocketFoodDelivery.rocketFood.controller.api.RestaurantApiController;
@@ -38,6 +50,7 @@ import com.rocketFoodDelivery.rocketFood.exception.ResourceNotFoundException;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.repository.UserRepository;
 import com.rocketFoodDelivery.rocketFood.service.RestaurantService;
+import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -281,4 +294,56 @@ public void testGetRestaurantById_NotFound() {
 
         assertEquals(400, response.getStatusCode().value());
     }
+
+ @Test
+public void testCreateOrder_Success() throws Exception {
+    // Arrange
+    Map<String, Object> order = new HashMap<>();
+    order.put("id", 1);
+    List<Map<String, Integer>> products = new ArrayList<>();
+    Map<String, Integer> product = new HashMap<>();
+    product.put("id", 1);
+    product.put("quantity", 1);
+    products.add(product);
+
+    // Mock the RestaurantService
+    RestaurantService restaurantService = mock(RestaurantService.class);
+    when(restaurantService.createOrder(anyInt(), anyInt(), anyInt(), anyList())).thenReturn(order);
+
+    // Inject the mocked RestaurantService into RestaurantApiController
+    RestaurantApiController restaurantApiController = new RestaurantApiController(restaurantService);
+
+    // MockMvc setup
+    MockMvc mockMvc = MockMvcBuilders.standaloneSetup(restaurantApiController).build();
+
+    // Act and Assert
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"restaurant_id\":1,\"customer_id\":1,\"courier_id\":1,\"products\":[{\"id\":1,\"quantity\":1}]}"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Success")));
+}@Test
+public void testCreateOrder_BadRequest() throws Exception {
+    // Arrange
+    Map<String, Object> errorResponse = new HashMap<>();
+    errorResponse.put("message", "Bad Request");
+
+    // Mock the RestaurantService
+    RestaurantService restaurantService = mock(RestaurantService.class);
+    when(restaurantService.createOrder(anyInt(), anyInt(), anyInt(), anyList())).thenThrow(new IllegalArgumentException());
+
+    // Inject the mocked RestaurantService into RestaurantApiController
+    RestaurantApiController restaurantApiController = new RestaurantApiController(restaurantService);
+
+    // MockMvc setup
+    MockMvc mockMvc = MockMvcBuilders.standaloneSetup(restaurantApiController).build();
+
+    // Act and Assert
+    mockMvc.perform(MockMvcRequestBuilders.post("/api/orders")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"restaurant_id\":1,\"customer_id\":1,\"courier_id\":1,\"products\":[{\"id\":1,\"quantity\":1}]}"))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andDo(MockMvcResultHandlers.print());
+}
+
 }
