@@ -22,14 +22,18 @@ import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.models.Product;
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,26 +58,26 @@ public class RestaurantService {
     private static final Logger logger = Logger.getLogger(RestaurantService.class.getName());
 
     @Autowired
-public RestaurantService(
-        RestaurantRepository restaurantRepository,
-        ProductRepository productRepository,
-        OrderRepository orderRepository,
-        ProductOrderRepository productOrderRepository,
-        UserRepository userRepository,
-        AddressService addressService,
-        OrderStatusRepository orderStatusRepository, // Add this line
-        AddressRepository addressRepository,
-        JdbcTemplate jdbcTemplate) { 
-    this.restaurantRepository = restaurantRepository;
-    this.productRepository = productRepository;
-    this.orderRepository = orderRepository;
-    this.productOrderRepository = productOrderRepository;
-    this.userRepository = userRepository;
-    this.addressService = addressService;
-    this.orderStatusRepository = orderStatusRepository; // And this line
-    this.addressRepository = addressRepository;
-    this.jdbcTemplate = jdbcTemplate; 
-}
+    public RestaurantService(
+            RestaurantRepository restaurantRepository,
+            ProductRepository productRepository,
+            OrderRepository orderRepository,
+            ProductOrderRepository productOrderRepository,
+            UserRepository userRepository,
+            AddressService addressService,
+            OrderStatusRepository orderStatusRepository, // Add this line
+            AddressRepository addressRepository,
+            JdbcTemplate jdbcTemplate) {
+        this.restaurantRepository = restaurantRepository;
+        this.productRepository = productRepository;
+        this.orderRepository = orderRepository;
+        this.productOrderRepository = productOrderRepository;
+        this.userRepository = userRepository;
+        this.addressService = addressService;
+        this.orderStatusRepository = orderStatusRepository; // And this line
+        this.addressRepository = addressRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     public List<Restaurant> findAllRestaurants() {
         return restaurantRepository.findAll();
@@ -262,40 +266,41 @@ public RestaurantService(
         String getProductsSql = "SELECT id, name, cost FROM products WHERE restaurant_id = ?";
         return jdbcTemplate.queryForList(getProductsSql, restaurantId);
     }
+
     public OrderStatus changeOrderStatus(int orderId, String newStatusName) {
-    Optional<OrderStatus> optionalStatus = orderStatusRepository.findByName(newStatusName);
-    if (!optionalStatus.isPresent()) {
-        throw new BadRequestException("Invalid or missing parameters", "Details about the error...");
+        Optional<OrderStatus> optionalStatus = orderStatusRepository.findByName(newStatusName);
+        if (!optionalStatus.isPresent()) {
+            throw new BadRequestException("Invalid or missing parameters", "Details about the error...");
+        }
+        OrderStatus newStatus = optionalStatus.get();
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with id " + orderId + " not found"));
+        order.setOrder_status(newStatus);
+        orderRepository.save(order);
+
+        return newStatus;
     }
-    OrderStatus newStatus = optionalStatus.get();
-
-    Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order with id " + orderId + " not found"));
-    order.setOrder_status(newStatus);
-    orderRepository.save(order);
-
-    return newStatus;
-    }
-
 
     public List<Map<String, Object>> getOrdersByUserTypeAndId(String type, int id) {
         String sql = "SELECT o.id, c.id as customer_id, c.email as customer_email, " +
-        "CONCAT(a.street_address, ', ', a.city, ', ', a.postal_code) as customer_address, " +
-        "r.id as restaurant_id, r.name as restaurant_name, " +
-        "CONCAT(ra.street_address, ', ', ra.city, ', ', ra.postal_code) as restaurant_address, " +
-        "cour.id as courier_id, u.name as courier_name, os.name as status, " +
-        "p.id as product_id, p.name as product_name, op.product_quantity, p.cost as unit_cost, " +
-        "(op.product_quantity * p.cost) as total_cost " +
-        "FROM orders o " +
-        "JOIN customers c ON o.customer_id = c.id " +
-        "JOIN addresses a ON c.address_id = a.id " +
-        "JOIN restaurants r ON o.restaurant_id = r.id " +
-        "JOIN addresses ra ON r.address_id = ra.id " +
-        "JOIN courier cour ON o.courier_id = cour.id " +
-        "JOIN users u ON cour.user_id = u.id " +
-        "JOIN order_statuses os ON o.status_id = os.id " +
-        "JOIN product_orders op ON o.id = op.order_id " +
-        "JOIN products p ON op.product_id = p.id ";
-    
+                "CONCAT(a.street_address, ', ', a.city, ', ', a.postal_code) as customer_address, " +
+                "r.id as restaurant_id, r.name as restaurant_name, " +
+                "CONCAT(ra.street_address, ', ', ra.city, ', ', ra.postal_code) as restaurant_address, " +
+                "cour.id as courier_id, u.name as courier_name, os.name as status, " +
+                "p.id as product_id, p.name as product_name, op.product_quantity, p.cost as unit_cost, " +
+                "(op.product_quantity * p.cost) as total_cost " +
+                "FROM orders o " +
+                "JOIN customers c ON o.customer_id = c.id " +
+                "JOIN addresses a ON c.address_id = a.id " +
+                "JOIN restaurants r ON o.restaurant_id = r.id " +
+                "JOIN addresses ra ON r.address_id = ra.id " +
+                "JOIN courier cour ON o.courier_id = cour.id " +
+                "JOIN users u ON cour.user_id = u.id " +
+                "JOIN order_statuses os ON o.status_id = os.id " +
+                "JOIN product_orders op ON o.id = op.order_id " +
+                "JOIN products p ON op.product_id = p.id ";
+
         if ("customer".equalsIgnoreCase(type)) {
             sql += "WHERE c.id = ?";
         } else if ("courier".equalsIgnoreCase(type)) {
@@ -305,7 +310,68 @@ public RestaurantService(
         } else {
             throw new IllegalArgumentException("Invalid user type");
         }
-    
+
         return jdbcTemplate.queryForList(sql, id);
+    }
+
+    public Map<String, Object> createOrder(int restaurantId, int customerId, int courierId, List<Map<String, Integer>> products) {
+        if (restaurantId == 0 || customerId == 0 || courierId == 0 || products == null || products.isEmpty()) {
+            throw new IllegalArgumentException("Missing parameters for creating order");
+        }
+        // Fetch the restaurant_rating for the given restaurant_id from the orders table
+        String fetchRatingSql = "SELECT restaurant_rating FROM orders WHERE restaurant_id = " + restaurantId;
+        List<Integer> restaurantRatings = jdbcTemplate.query(fetchRatingSql,
+                (rs, rowNum) -> rs.getInt("restaurant_rating"));
+        if (restaurantRatings.isEmpty()) {
+            throw new IllegalArgumentException("No rating found for restaurant with ID: " + restaurantId);
+        }
+        Integer restaurantRating = restaurantRatings.stream().mapToInt(Integer::intValue).sum()
+                / restaurantRatings.size();
+    
+        // Fetch the customer_id for the given customer_id from the orders table
+        String fetchCustomerSql = "SELECT customer_id FROM orders WHERE customer_id = " + customerId;
+        List<Integer> fetchedCustomerIds = jdbcTemplate.query(fetchCustomerSql,
+                (rs, rowNum) -> rs.getInt("customer_id"));
+        if (fetchedCustomerIds.isEmpty()) {
+            throw new IllegalArgumentException("No customer found with ID: " + customerId);
+        }
+        Integer fetchedCustomerId = fetchedCustomerIds.get(0); // Assuming there will always be at least one matching
+    
+        // Include the restaurant_rating, customer_id, and courier_id when creating a new order
+        String insertOrderSql = "INSERT INTO orders (restaurant_id, customer_id, courier_id, restaurant_rating, status_id) VALUES (?, ?, ?, ?, 1)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(insertOrderSql, Statement.RETURN_GENERATED_KEYS);
+            ps.setInt(1, restaurantId);
+            ps.setInt(2, fetchedCustomerId);
+            ps.setInt(3, courierId);
+            ps.setInt(4, restaurantRating);
+            return ps;
+        }, keyHolder);
+    
+        int orderId = keyHolder.getKey().intValue();
+    
+        String insertProductOrderSql = "INSERT INTO product_orders (order_id, product_id, product_quantity) VALUES (?, ?, ?)";
+        for (Map<String, Integer> product : products) {
+            jdbcTemplate.update(insertProductOrderSql, orderId, product.get("id"), product.get("quantity"));
+        }
+    
+        // Fetch the details of the created order
+        Map<String, Object> createdOrder = getOrderById(orderId);
+    
+        // Filter the order details to include only the newly created order
+    
+        return createdOrder;
+    }
+    public Map<String, Object> getOrderById(int orderId) {
+        String sql = "SELECT orders.*, restaurants.name AS restaurant_name, customerUsers.name AS customer_name, courierUsers.name AS courier_name " +
+                     "FROM orders " +
+                     "JOIN restaurants ON orders.restaurant_id = restaurants.id " +
+                     "JOIN customers ON orders.customer_id = customers.id " +
+                     "JOIN users AS customerUsers ON customers.user_id = customerUsers.id " +
+                     "JOIN courier ON orders.courier_id = courier.id " +
+                     "JOIN users AS courierUsers ON courier.user_id = courierUsers.id " +
+                     "WHERE orders.id = ?";
+        return jdbcTemplate.queryForMap(sql, orderId);
     }
 }

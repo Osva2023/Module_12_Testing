@@ -174,6 +174,25 @@ public ResponseEntity<Object> getOrdersByUserTypeAndId(@RequestParam String type
         return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Invalid or missing parameters", null));
     }
 }
+@PostMapping("/api/orders")
+public ResponseEntity<Object> createOrder(@RequestBody Map<String, Object> request) {
+    try {
+        int restaurantId = (int) request.get("restaurant_id");
+        int customerId = (int) request.get("customer_id");
+        int courierId = (int) request.get("courier_id"); // Extract the courier_id from the request
+        List<Map<String, Integer>> products = (List<Map<String, Integer>>) request.get("products");
+
+        // Try to create the order
+        Map<String, Object> order = restaurantService.createOrder(restaurantId, customerId, courierId, products); 
+
+        // If the order is created successfully, return a 200 OK response with the order data
+        return ResponseBuilder.buildOkResponse(order);
+    } catch (IllegalArgumentException e) {
+        // If the parameters are invalid or missing, return a 400 Bad Request response with an error message
+        return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Invalid or missing parameters", null));
+    }
+}
+
 
 
 }
