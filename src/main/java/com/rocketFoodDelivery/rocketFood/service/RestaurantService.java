@@ -16,17 +16,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.rocketFoodDelivery.rocketFood.models.Address;
-import com.rocketFoodDelivery.rocketFood.models.Courier;
-import com.rocketFoodDelivery.rocketFood.models.Customer;
+
+
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
-import com.rocketFoodDelivery.rocketFood.models.Product;
+
 import com.rocketFoodDelivery.rocketFood.models.UserEntity;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

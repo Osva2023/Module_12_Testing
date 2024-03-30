@@ -7,7 +7,7 @@ import com.rocketFoodDelivery.rocketFood.util.ResponseBuilder;
 import com.rocketFoodDelivery.rocketFood.exception.*;
 import com.rocketFoodDelivery.rocketFood.models.OrderStatus;
 import com.rocketFoodDelivery.rocketFood.models.Restaurant;
-import com.rocketFoodDelivery.rocketFood.models.Order;
+
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -45,14 +45,7 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }
-    // TODO
-
-    /**
-     * Deletes a restaurant by ID.
-     *
-     * @param id The ID of the restaurant to delete.
-     * @return ResponseEntity with a success message, or a ResourceNotFoundException if the restaurant is not found.
-     */
+   
     @DeleteMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> deleteRestaurant(@PathVariable int id) {
         try {
@@ -72,22 +65,16 @@ public ResponseEntity<Map<String, Object>> createRestaurant(@RequestBody ApiCrea
     @PutMapping("/api/restaurants/{id}")
     public ResponseEntity<Object> updateRestaurant(@PathVariable("id") int id, @Valid @RequestBody ApiCreateRestaurantDto restaurantUpdateData, BindingResult result) {
         if (result.hasErrors()) {
-            return new ResponseEntity<>(result.getAllErrors(), HttpStatus.BAD_REQUEST);
+            return ResponseBuilder.buildBadRequestExceptionResponse(new BadRequestException("Validation failed", result.getAllErrors().toString()));
         }
     
         Optional<ApiCreateRestaurantDto> updatedRestaurant = restaurantService.updateRestaurant(id, restaurantUpdateData);
     
         if (!updatedRestaurant.isPresent()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "resource not found");
-            response.put("details", "restaurant with id " + id + " not found");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            return ResponseBuilder.buildResourceNotFoundExceptionResponse(new ResourceNotFoundException("Restaurant with id " + id + " not found"));
         }
     
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Success");
-        response.put("data", updatedRestaurant.get());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseBuilder.buildOkResponse(updatedRestaurant.get());
     }
 
     @GetMapping("/api/restaurants/{id}")

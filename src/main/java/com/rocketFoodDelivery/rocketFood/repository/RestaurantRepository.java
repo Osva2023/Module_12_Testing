@@ -55,28 +55,28 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Integer>
         "WHERE (:rating IS NULL OR result.rating = :rating)")
     List<Object[]> findRestaurantsByRatingAndPriceRange(@Param("rating") Integer rating, @Param("priceRange") Integer priceRange);
 
-    // TODO
+    
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value =
         "TODO Write SQL query here")
     void saveRestaurant(long userId, long addressId, String name, int priceRange, String phone, String email);
 
-    // TODO
+    
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value =
             "TODO Write SQL query here")
     void updateRestaurant(int restaurantId, String name, int priceRange, String phone);
 
-    // TODO
+    
     @Query(nativeQuery = true, value = "TODO Write SQL query here")
     Optional<Restaurant> findRestaurantById(@Param("restaurantId") int restaurantId);
 
     @Query(nativeQuery = true, value = "SELECT LAST_INSERT_ID() AS id")
     int getLastInsertedId();
 
-    // TODO
+    
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = "TODO Write SQL query here")
