@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+</head>
+<body>
+<!--Nav bar -->
+<div th:include="navbar :: body"></div>
+<!--table of restrants-->
+<div class = "container">
+<!--    <h1 th:inline="text">Hello <span th:remove="tag" sec:authentication="name">thymeleaf</span>!</h1>-->
+    <h1>Restaurants</h1>
+    <table class="table">
+        <a href="/backoffice/restaurant/new">
+            <button>Create</button>
+        </a>
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Address ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Price Range</th>
+            <th scope="col">User ID</th>
+            <th scope="col">CRUD </th>
+        </tr>
+        </thead>
+        <tbody>
+            <div th:each="restaurant : ${restaurants}">
+                <tr>
+                    <th scope="row"><p th:text="${restaurant.id}"> </p></th>
+                    <td><p th:text="${restaurant.address.id}"> </p></td>
+                    <td><p th:text="${restaurant.name}"> </p></td>
+                    <td><p th:text="${restaurant.price_range}"> </p></td>
+                    <td><p th:text="${restaurant.userEntity.id}"> </p></td>
+                    <td>
+                        <a th:href = "@{/backoffice/restaurant/{id}/edit(id=${restaurant.id})}">
+                        <button>
+                            EDIT
+                        </button>
+                        </a>
+                        <a th:href = "@{/backoffice/restaurant/{id}/delete(id=${restaurant.id})}">
+                            <button>
+                                Delete
+                            </button>
+                        </a>
+                        </td>
+                </tr>
+            </div>
+        </tbody>
+    </table>
+</div>
+<!---->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+</html>
