@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Integer> {
 
-    // TODO
+    
     @Modifying
     @Transactional
     @Query(nativeQuery = true, value = "TODO Write SQL query here")
